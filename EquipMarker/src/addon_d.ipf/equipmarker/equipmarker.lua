@@ -1,5 +1,5 @@
 local addonName = "EquipMarker";
-local verText = "1.01";
+local verText = "1.02";
 local autherName = "TOUKIBI";
 local addonNameLower = string.lower(addonName);
 
@@ -13,7 +13,7 @@ local DebugMode = false;
 
 -- コモンモジュール(の代わり)
 local Toukibi = {
-	
+
 	Log = function(self, Caption)
 		if Caption == nil then Caption = "Test Printing" end
 		Caption = tostring(Caption) or "Test Printing";
@@ -99,7 +99,7 @@ local Toukibi = {
 		else
 			_G[hookedFunctionStr] = newFunction;
 		end
-	end 
+	end
 };
 Me.ComLib = Toukibi;
 local function log(value)
@@ -168,7 +168,8 @@ end
 local function GetItemStatus(objItem)
 	local ReinforceValue = TryGetProp(objItem, "Reinforce_2");
 	local NeedAppraisal = TryGetProp(objItem, "NeedAppraisal");
-	local NeedRandomOption = TryGetProp(objItem, "NeedRandomOption");
+    local NeedRandomOption = TryGetProp(objItem, "NeedRandomOption");
+    local TranscendValue = TryGetProp(objItem, 'Transcend')
 
 	local NotAppraisal = false;
 	if NeedAppraisal ~= nil or NeedRandomOption ~= nil then
@@ -180,10 +181,10 @@ local function GetItemStatus(objItem)
 	if itemGrade == nil then
 		itemGrade = 0;
 	end
-	return ReinforceValue, NotAppraisal, itemGrade;
+	return ReinforceValue, TranscendValue, NotAppraisal, itemGrade;
 end
 
-local function AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade, AvoidShopHelper)
+local function AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, NeedAppraisal, itemGrade, AvoidShopHelper)
 	local TextBOffset = -1
 	local IconBOffset = 1
 
@@ -201,7 +202,25 @@ local function AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade, 
 		end
 		txtReinforce:EnableHitTest(0);
 		txtReinforce:SetText(string.format("{#EEEEEE}{s16}{ol}{b}{ds}+%d{/}{/}{/}{/}{/}", ReinforceValue));
-	end
+    end
+
+    if TranscendValue and TranscendValue > 0 then
+        local txtTranscend = tolua.cast(objSlot:CreateOrGetControl("richtext", addonName .. "_TranscendValue", 0, 0, 30, 16), "ui::CRichText");
+
+		txtTranscend:SetGravity(ui.LEFT, ui.BOTTOM);
+
+		if AvoidShopHelper then
+			local _gShopHelper = _G["ADDONS"]["TOUKIBI"]["ShopHelper"]
+			local _offset = TextBOffset
+			if _gShopHelper and _gShopHelper.Settings and _gShopHelper.Settings.Repair_ShowDurGauge == true then _offset = _offset + 6 end
+			txtTranscend:SetMargin(1, 0, 0, _offset);
+		else
+			txtTranscend:SetMargin(1, 0, 0, TextBOffset);
+		end
+
+		txtTranscend:EnableHitTest(0);
+		txtTranscend:SetText(string.format("{#999999}{s16}{ol}{b}{ds}%d{/}{/}{/}{/}{/}", TranscendValue));
+    end
 
 	if NeedAppraisal then
 		-- 未鑑定品は虫眼鏡マークを右下につける
@@ -248,7 +267,7 @@ local function UpdateEquipSlot()
 	local equipItemList = session.GetEquipItemList()
 	for i = 0, equipItemList:Count() - 1 do
 		local equipItem = equipItemList:Element(i);
-		
+
 		local spotName = item.GetEquipSpotName(equipItem.equipSpot);
 		if spotName ~= nil then
 			if SET_EQUIP_ICON_FORGERY(objParentFrame, spotName) == false then
@@ -265,8 +284,8 @@ local function UpdateEquipSlot()
 						-- アイテムあり
 						local iconInfo = objIcon:GetInfo();
 						local objItem = GetIES(GET_ITEM_BY_GUID(iconInfo:GetIESID()):GetObject());
-						local ReinforceValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
-						AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade);
+						local ReinforceValue, TranscendValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
+						AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, NeedAppraisal, itemGrade);
 					end
 				end
 			end
@@ -288,8 +307,8 @@ local function UpdateInvSlot(slotName)
 				-- アイテムあり
 				local iconInfo = objIcon:GetInfo();
 				local objItem = GetIES(GET_ITEM_BY_GUID(iconInfo:GetIESID()):GetObject());
-				local ReinforceValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
-				AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade);
+				local ReinforceValue, TranscendValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
+				AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, NeedAppraisal, itemGrade);
 			end
 		end
 	end
@@ -325,8 +344,8 @@ function Me.UpdateWHouse(frameName)
 
 				if objItem.ItemType == "Equip" then
 					-- 装備アイテムの場合
-					local ReinforceValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
-					AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade);
+					local ReinforceValue, TranscendValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
+					AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, NeedAppraisal, itemGrade);
 					--数量は1のはずなので数量のテキストを消す
 					objSlot:SetText("")
 				else
@@ -343,7 +362,7 @@ function Me.UpdateRepairList(frameName)
 	-- ShopHelper検出
 	local ExistsShopHelper = _G["ADDONS"]["TOUKIBI"]["ShopHelper"] ~= nil
 	-- スロットの中身を調べる
-	local objSlotSet = GET_CHILD_RECURSIVELY(objParentFrame, "slotlist", "ui::CSlotSet")	
+	local objSlotSet = GET_CHILD_RECURSIVELY(objParentFrame, "slotlist", "ui::CSlotSet")
 	local slotCount = objSlotSet:GetSlotCount();
 	for i = 0, slotCount - 1 do
 		local objSlot = objSlotSet:GetSlotByIndex(i);
@@ -353,8 +372,8 @@ function Me.UpdateRepairList(frameName)
 			-- アイテムあり
 			local iconInfo = objIcon:GetInfo();
 			local objItem = GetIES(GET_ITEM_BY_GUID(iconInfo:GetIESID()):GetObject());
-			local ReinforceValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
-			AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade, ExistsShopHelper);
+			local ReinforceValue, TranscendValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
+			AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, NeedAppraisal, itemGrade, ExistsShopHelper);
 		end
 	end
 end
@@ -365,7 +384,7 @@ function Me.UpdateAppraisalList(frameName)
 	-- ShopHelper検出
 	local ExistsShopHelper = _G["ADDONS"]["TOUKIBI"]["ShopHelper"] ~= nil
 	-- スロットの中身を調べる
-	local objSlotSet = GET_CHILD_RECURSIVELY(objParentFrame, "slotlist", "ui::CSlotSet")	
+	local objSlotSet = GET_CHILD_RECURSIVELY(objParentFrame, "slotlist", "ui::CSlotSet")
 	local slotCount = objSlotSet:GetSlotCount();
 	for i = 0, slotCount - 1 do
 		local objSlot = objSlotSet:GetSlotByIndex(i);
@@ -375,14 +394,15 @@ function Me.UpdateAppraisalList(frameName)
 			-- アイテムあり
 			local iconInfo = objIcon:GetInfo();
 			local objItem = GetIES(GET_ITEM_BY_GUID(iconInfo:GetIESID()):GetObject());
-			local ReinforceValue = TryGetProp(objItem, "Reinforce_2");
+            local ReinforceValue = TryGetProp(objItem, "Reinforce_2");
+            local TranscendValue = TryGetProp(objItem, "Transcend");
 			local useLv = TryGetProp(objItem, "UseLv");
 
 			local itemGrade = GetItemGrade(objItem);
 			if itemGrade == nil then
 				itemGrade = 0;
 			end
-			AddInfoToSlot(objSlot, ReinforceValue, false, itemGrade);
+			AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, false, itemGrade);
 			-- 装備レベルを書いておく (鬱陶しいので要望が来るまでは封印)
 			-- objSlot:SetText(Toukibi:GetStyledText(useLv, {"#EEEEEE", "s14", "ol", "ds"}), "count", "right", "top", -2, 1);
 		end
@@ -393,7 +413,7 @@ function Me.UpdateDecomposeList()
 	local objParentFrame = ui.GetFrame("itemdecompose");
 	if objParentFrame == nil or objParentFrame:IsVisible() == 0 then return end
 	-- スロットの中身を調べる
-	local objSlotSet = GET_CHILD_RECURSIVELY(objParentFrame, "itemSlotset", "ui::CSlotSet")	
+	local objSlotSet = GET_CHILD_RECURSIVELY(objParentFrame, "itemSlotset", "ui::CSlotSet")
 	local slotCount = objSlotSet:GetSlotCount();
 	for i = 0, slotCount - 1 do
 		local objSlot = objSlotSet:GetSlotByIndex(i);
@@ -402,8 +422,8 @@ function Me.UpdateDecomposeList()
 		if objIcon ~= nil then
 			local iconInfo = objIcon:GetInfo();
 			local objItem = GetObjectByGuid(iconInfo:GetIESID());
-			local ReinforceValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
-			AddInfoToSlot(objSlot, ReinforceValue, NeedAppraisal, itemGrade);
+			local ReinforceValue, TranscendValue, NeedAppraisal, itemGrade = GetItemStatus(objItem);
+			AddInfoToSlot(objSlot, ReinforceValue, TranscendValue, NeedAppraisal, itemGrade);
 		end
 	end
 end
@@ -462,7 +482,7 @@ function Me.INVENTORY_TOTAL_LIST_GET_HOOKED(frame, setpos, isIgnorelifticon)
 end
 
 -- 修理/ジェムロースティング店を開くイベント
-function Me.OPEN_ITEMBUFF_UI_HOOKED(groupName, sellType, handle) 
+function Me.OPEN_ITEMBUFF_UI_HOOKED(groupName, sellType, handle)
 	Me.HoockedOrigProc["OPEN_ITEMBUFF_UI"](groupName, sellType, handle);
 	local groupInfo = session.autoSeller.GetByIndex(groupName, 0);
 	if groupInfo == nil then return end
@@ -475,7 +495,7 @@ function Me.OPEN_ITEMBUFF_UI_HOOKED(groupName, sellType, handle)
 	elseif sklName == 'Appraiser_Apprise' then
 		Me.UpdateAppraisalList("appraisal_pc")
 	end
-end 
+end
 
 -- アイテム分解を開くイベント
 function Me.ITEM_DECOMPOSE_ITEM_LIST_HOOKED(frame, itemGradeList)

@@ -1,5 +1,5 @@
 local addonName = "ToolTipHelper_Toukibi";
-local verText = "1.04";
+local verText = "1.08";
 local autherName = "TOUKIBI";
 local addonNameLower = string.lower(addonName);
 local SlashCommandList = {"/tth"} -- {"/コマンド1", "/コマンド2", .......};
@@ -1712,24 +1712,24 @@ local ResText = {
 			PercentMark = "％"
 		},
 		ForTitle = {
-			RegisteredInTheJournal = "作成経験あり"
-		  , UnregisteredInTheJournal = "未作成"
-		  , DropsFrom = "アイテムドロップ率："
+			RegisteredInTheJournal = "{b}作成経験あり{/}"
+		  , UnregisteredInTheJournal = "{b}未作成{/}"
+		  , DropsFrom = "{b}アイテムドロップ率：{/}"
 		  , FoundMob = "討伐経験あり"
 		  , UnfoundMob = "未討伐"
 		  , ObtainedCount = "アイテム取得数："
 		  , RerollPrice = "キューブ再開封費用："
 		  , MagnumOpusCommon = "マグナムオーパス情報"
-		  , MagnumOpusFrom = "このアイテムを作るには"
-		  , MagnumOpusInto = "このアイテムを使うレシピ"
-		  , Mark_UsingXML = " {#229900}{s14}{ol}[xml]{/}{/}{/}"
+		  , MagnumOpusFrom = "{b}このアイテムを作るには{/}"
+		  , MagnumOpusInto = "{b}このアイテムを使うレシピ{/}"
+		  , Mark_UsingXML = " {#229900}{s14}{ol}{b}[xml]{/}{/}{/}{/}"
 		  , Close = "閉じる"
 		},
 		Other = {
-			ToggleOpusMap = "{nl}{s6} {/}{nl}  Shiftキーで配置を表示します"
+			ToggleOpusMap = "{nl}{s6} {/}{nl}{b}  Shiftキーで配置を表示します{/}"
 		  , NPCRepair = "NPCで修理"
 		  , SquireRepair = "修理露店で修理"
-		  , RepairCheaperCommon = "{s14}%sしたほうが安い{/}{s24} {/}"
+		  , RepairCheaperCommon = "{s14}{b}%sしたほうが安い{/}{/}{s24} {/}"
 		  , OtherItems = "    他%s種 ..."
 		},
 		SettingFrame = {
@@ -1746,6 +1746,7 @@ local ResText = {
 			, showRecipe = "アイテム製造書"
 			, showRecipeHaveNeedCount = "所持数/必要数を表示"
 			, showItemDropRatio = "ドロップ率"
+			, UseAutoImportDropData = "外部ファイル(dropdata.tsv)の自動読み込みを行う"
 			, showMagnumOpus = "マグナムオーパス"
 			, AllwaysDisplayOpusMap_From = "変換元のアイテム配置を常に表示する"
 			, AllwaysDisplayOpusMap_Into = "変換先のアイテム配置を常に表示する"
@@ -1766,10 +1767,13 @@ local ResText = {
 		  , FailToLoadXMLSimple = "エラー：xmlSimpleの読み込みに失敗しました"
 		  , NotFoundMagnumOpusXML = "'recipe_puzzle.xml' は検出されませんでした"
 		  , FoundMagnumOpusXML = "'recipe_puzzle.xml' を検出しました"
-		  , StartImportDropData = "'dropdata.xml'の読み込みを開始します。この処理では10秒弱画面がフリーズします。"
+		  , StartImportDropData = "'dropdata.tsv'の読み込みを開始します。この処理では10秒弱画面がフリーズします。"
 		  , NotFoundDropDataXML = "'dropdata.xml' は検出されませんでした"
 		  , FoundDropDataXML = "'dropdata.xml' を検出しました"
 		  , CompleteImportDropDataXML = "'dropdata.xml' の読み込みが完了しました"
+		  , NotFoundDropDataTSV = "'dropdata.tsv' は検出されませんでした"
+		  , FoundDropDataTSV = "'dropdata.tsv' を検出しました"
+		  , CompleteImportDropDataTSV = "'dropdata.tsv' の読み込みが完了しました"
 		}
 	},
 	en = {
@@ -1811,6 +1815,7 @@ local ResText = {
 		  , showRecipe = "Recipe"
 		  , showRecipeHaveNeedCount = "Display possession / required number"
 		  , showItemDropRatio = "Drop ratio"
+		  , UseAutoImportDropData = "Automatically read the external file (dropdata.tsv)."
 		  , showMagnumOpus = "Magnum Opus"
 		  , AllwaysDisplayOpusMap_From = "Always display the item placement : Transmuted From"
 		  , AllwaysDisplayOpusMap_Into = "Always display the item placement : Transmutes Into"
@@ -1831,10 +1836,13 @@ local ResText = {
 		  , FailToLoadXMLSimple = "Error: Unable to load xmlSimple"
 		  , NotFoundMagnumOpusXML = "Magnum Opus recipe file not found"
 		  , FoundMagnumOpusXML = "Magnum Opus recipe file was found"
-		  , StartImportDropData = "Start loading 'dropdata.xml'. In this process, the screen freezes up for about 10 seconds."
+		  , StartImportDropData = "Start loading 'dropdata.tsv'. In this process, the screen freezes up for about 10 seconds."
 		  , NotFoundDropDataXML = "'dropdata.xml' is not found"
 		  , FoundDropDataXML = "found 'dropdata.xml'"
 		  , CompleteImportDropDataXML = "Import of 'dropdata.xml' is completed"
+		  , NotFoundDropDataTSV = "'dropdata.tsv' is not found"
+		  , FoundDropDataTSV = "found 'dropdata.tsv'"
+		  , CompleteImportDropDataTSV = "Import of 'dropdata.tsv' is completed"
 		}
 	}
 };
@@ -2139,6 +2147,145 @@ local Toukibi = {
 	end 
 };
 Me.ComLib = Toukibi;
+
+-- ノードオブジェクト(XMLパーサーで使用)
+local function CreateNode(name)
+    local objNode = {}
+    objNode.___value = nil
+    objNode.___name = name
+    objNode.___children = {}
+    objNode.___attrs = {}
+
+    function objNode:value() return self.___value end
+    function objNode:setValue(val) self.___value = val end
+    function objNode:name() return self.___name end
+    function objNode:setName(name) self.___name = name end
+    function objNode:children() return self.___children end
+    function objNode:numChildren() return #self.___children end
+    function objNode:addChild(child)
+        if self[child:name()] ~= nil then
+            if type(self[child:name()].name) == "function" then
+                local tmpTable = {}
+                table.insert(tmpTable, self[child:name()])
+                self[child:name()] = tmpTable
+            end
+            table.insert(self[child:name()], child)
+        else
+            self[child:name()] = child
+        end
+        table.insert(self.___children, child)
+    end
+
+    function objNode:attributes() return self.___attrs end
+    function objNode:numAttributes() return #self.___attrs end
+    function objNode:addAttribute(name, value)
+        local lName = "@" .. name
+        if self[lName] ~= nil then
+            if type(self[lName]) == "string" then
+                local tmpTable = {}
+                table.insert(tmpTable, self[lName])
+                self[lName] = tmpTable
+            end
+            table.insert(self[lName], value)
+        else
+            self[lName] = value
+        end
+        table.insert(self.___attrs, { name = name, value = self[name] })
+    end
+
+    return objNode
+end
+
+-- XMLパーサー
+local function CreateXMLParser()
+
+    XmlParser = {};
+
+    function XmlParser:FromXmlString(value)
+        value = string.gsub(value, "&#x([%x]+)%;",
+            function(h)
+                return string.char(tonumber(h, 16))
+            end);
+        value = string.gsub(value, "&#([0-9]+)%;",
+            function(h)
+                return string.char(tonumber(h, 10))
+            end);
+        value = string.gsub(value, "&quot;", "\"");
+        value = string.gsub(value, "&apos;", "'");
+        value = string.gsub(value, "&gt;", ">");
+        value = string.gsub(value, "&lt;", "<");
+        value = string.gsub(value, "&amp;", "&");
+        return value;
+    end
+
+    function XmlParser:ParseArgs(node, s)
+        string.gsub(s, "(%w+)=([\"'])(.-)%2", function(w, _, a)
+            node:addAttribute(w, self:FromXmlString(a))
+        end)
+    end
+
+    function XmlParser:ParseXmlText(xmlText)
+        local stack = {}
+        local top = CreateNode()
+        table.insert(stack, top)
+        local ni, c, label, xarg, empty
+        local i, j = 1, 1
+        while true do
+            ni, j, c, label, xarg, empty = string.find(xmlText, "<(%/?)([%w_:]+)(.-)(%/?)>", i)
+            if not ni then break end
+            local text = string.sub(xmlText, i, ni - 1);
+            if not string.find(text, "^%s*$") then
+                local lVal = (top:value() or "") .. self:FromXmlString(text)
+                stack[#stack]:setValue(lVal)
+            end
+            if empty == "/" then -- empty element tag
+                local lNode = CreateNode(label)
+                self:ParseArgs(lNode, xarg)
+                top:addChild(lNode)
+            elseif c == "" then -- start tag
+                local lNode = CreateNode(label)
+                self:ParseArgs(lNode, xarg)
+                table.insert(stack, lNode)
+                top = lNode
+            else -- end tag
+                local toclose = table.remove(stack) -- remove top
+
+                top = stack[#stack]
+                if #stack < 1 then
+                    error("XmlParser: nothing to close with " .. label)
+                end
+                if toclose:name() ~= label then
+                    error("XmlParser: trying to close " .. toclose.name .. " with " .. label)
+                end
+                top:addChild(toclose)
+            end
+            i = j + 1
+        end
+        local text = string.sub(xmlText, i);
+        if #stack > 1 then
+            error("XmlParser: unclosed " .. stack[#stack]:name());
+        end
+        return top
+    end
+
+    function XmlParser:loadFile(xmlFilename)
+        local path = xmlFilename;
+        local hFile, err = io.open(path, "r");
+
+        if hFile and not err then
+            local xmlText = hFile:read("*a"); -- read file content
+            io.close(hFile);
+            return self:ParseXmlText(xmlText), nil;
+        else
+            print(err);
+            return nil;
+        end
+    end
+
+    return XmlParser;
+end
+
+
 local function log(value)
 	Toukibi:Log(value);
 end
@@ -2230,7 +2377,7 @@ local function MargeDefaultSetting(Force, DoSave)
 	Me.Settings.showItemLevel				 = Toukibi:GetValueOrDefault(Me.Settings.showItemLevel					, true, Force);
 	Me.Settings.showJournalStats			 = Toukibi:GetValueOrDefault(Me.Settings.showJournalStats				, true, Force);
 	Me.Settings.showRepairRecommendation	 = Toukibi:GetValueOrDefault(Me.Settings.showRepairRecommendation		, true, Force);
-	Me.Settings.squireRepairPerKit			 = Toukibi:GetValueOrDefault(Me.Settings.squireRepairPerKit				, 200, Force); -- 160 is the minimum for the Squire to break even
+	Me.Settings.squireRepairPerKit			 = Toukibi:GetValueOrDefault(Me.Settings.squireRepairPerKit				, 140, Force); -- 160 is the minimum for the Squire to break even
 	Me.Settings.UseOriginalBgSkin			 = Toukibi:GetValueOrDefault(Me.Settings.UseOriginalBgSkin				, true, Force);
 	Me.Settings.UseAutoImportDropData		 = Toukibi:GetValueOrDefault(Me.Settings.UseAutoImportDropData			, false, Force);
 	
@@ -2345,13 +2492,7 @@ function Me.GetItemMaxCount(invItem)
 end
 
 function Me.LoadMagnumOpusRecipeFromXML()
-	local status, objXml = pcall(require, "xmlSimple");
-	if not status then
-		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.FailToLoadXMLSimple"), "Warning", true, false);
-		return;
-	end
-
-	local xmlMagnumOpus = objXml.newParser():loadFile(Me.MagnumOpusRecipeFileName);
+	local xmlMagnumOpus = CreateXMLParser():loadFile(Me.MagnumOpusRecipeFileName);
 	if xmlMagnumOpus == nil then
 		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.NotFoundMagnumOpusXML"), "Caution", true, false);
 		return;
@@ -2381,43 +2522,49 @@ function Me.LoadMagnumOpusRecipeFromXML()
 	end
 end
 
-function Me.ImportDropData()
-	local ImportFilePathName = string.format("../addons/%s/%s", addonNameLower, "dropdata.xml");
+function Me.ImportDropData(ShowMessage)
+	local ImportFilePathName = string.format("../addons/%s/%s", addonNameLower, "dropdata.tsv");
 
-	local status, objXml = pcall(require, "xmlSimple");
-	if not status then
-		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.FailToLoadXMLSimple"), "Warning", true, false);
-		return;
+	if ShowMessage then
+		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.FoundDropDataTSV"), "Notice", true, false);
 	end
 
-	local xmlDropData = objXml.newParser():loadFile(ImportFilePathName);
-	if xmlDropData == nil then
-		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.NotFoundDropDataXML"), "Caution", true, false);
-		return;
+	local hFile, err = io.open(ImportFilePathName, "r");
+
+	if hFile and not err then
+		Me.DropXMLData = {};
+
+		local StartNum, EndNum, DropMobID, DropRatio, ItemClassName;
+		for rawText in hFile:lines() do
+			StartNum, EndNum, DropMobID, DropRatio, ItemClassName = string.find(rawText, "^(%d+)\t(%d+)\t([%w_]+)$");
+			if StartNum then
+				table.insert(Me.DropXMLData, {Item = ItemClassName
+											, MobID = tonumber(DropMobID)
+											, Ratio = tonumber(DropRatio)
+											});
+			
+			else
+				log(string.format( "Error has occured:  MobID=%s Ratio=%s Item=%s", DropMobID, DropRatio, ItemClassName));
+			end
+		end
+
+		io.close(hFile);
 	else
-		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.FoundDropDataXML"), "Notice", true, false);
+		if ShowMessage then
+			Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.NotFoundDropDataTSV"), "Caution", true, false);
+		end
 	end
 
-	Me.DropXMLData = {};
-	local DropDataList = xmlDropData["DropData"]:children();
-
-	for i = 1, #DropDataList do
-		local DropDataRecord = DropDataList[i];
-		local ItemClassName = DropDataRecord["@iCNm"];
-		local DropMobID = tonumber(DropDataRecord["@mCID"]);
-		local DropRatio = tonumber(DropDataRecord["@Ratio"]);
-		table.insert(Me.DropXMLData, {Item = ItemClassName
-									, MobID = DropMobID
-									, Ratio = DropRatio
-									 });
-	end
 	--view(Me.DropXMLData)
-	Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.CompleteImportDropDataXML"), "Notice", true, false);
+	if ShowMessage then
+		Toukibi:AddLog(Toukibi:GetResText(ResText, Me.Settings.Lang, "System.CompleteImportDropDataTSV"), "Notice", true, false);
+	end
+
 	Me.CreateDropRatioListFromXmlData()
 end
 
 function TOUKIBI_TTHELPER_START_IMPORT()
-	Me.ImportDropData()
+	Me.ImportDropData(true)
 end
 
 -- ===========================
@@ -2513,42 +2660,46 @@ end
 
 function Me.CreateDropRatioListFromXmlData()
 	if Me.DropXMLData == nil then return end;
+	Me.ApplicationsList.DropRatio = {};
 	local tblTarget = Me.ApplicationsList.DropRatio;
-	if tblTarget == nil then tblTarget = {} end
 
 	for _, value in ipairs(Me.DropXMLData) do
 		local clsMob = GetClassByType("Monster", value.MobID)
-		local itemClassName = value.Item;
-		local DropRatio = value.Ratio;
+		if clsMob ~= nil then
+			local itemClassName = value.Item;
+			local DropRatio = value.Ratio;
 
-		if tblTarget[itemClassName] == nil then
-			tblTarget[itemClassName] = {};
-		end
-
-		local MobClassID = clsMob.ClassID;
-		local MobClassName = clsMob.ClassName;
-		local MobName = dictionary.ReplaceDicIDInCompStr(clsMob.Name);
-		local MobLv = clsMob.Level;
-		local MobRank = clsMob.MonRank;
-
-		local isNewMob = true;
-		
-		--[[
-		for k = 1, #tblTarget[itemClassName] do
-			if tblTarget[itemClassName][k].ClassName == MobClassName and tblTarget[itemClassName][k].DropRatio == DropRatio then
-				isNewMob = false;
-				break
+			if tblTarget[itemClassName] == nil then
+				tblTarget[itemClassName] = {};
 			end
-		end
-		--]]
-		if isNewMob then
-			table.insert(tblTarget[itemClassName],	 {ClassID = MobClassID
-													, ClassName = MobClassName
-													, Name = MobName
-													, DropRatio = DropRatio
-													, Rank = string.upper(MobRank)
-													, Lv = MobLv
-													 })
+
+			local MobClassID = clsMob.ClassID;
+			local MobClassName = clsMob.ClassName;
+			local MobName = dictionary.ReplaceDicIDInCompStr(clsMob.Name);
+			local MobLv = clsMob.Level;
+			local MobRank = clsMob.MonRank;
+
+			local isNewMob = true;
+			
+			--[[
+			for k = 1, #tblTarget[itemClassName] do
+				if tblTarget[itemClassName][k].ClassName == MobClassName and tblTarget[itemClassName][k].DropRatio == DropRatio then
+					isNewMob = false;
+					break
+				end
+			end
+			--]]
+			if isNewMob then
+				table.insert(tblTarget[itemClassName],	 {ClassID = MobClassID
+														, ClassName = MobClassName
+														, Name = MobName
+														, DropRatio = DropRatio
+														, Rank = string.upper(MobRank)
+														, Lv = MobLv
+														})
+			end
+		else
+			-- log("Cannot found MobID:" .. value.MobID)
 		end
 	end
 	--view(tblTarget)
@@ -2630,7 +2781,7 @@ function Me.GetBasicInfoText(invItem)
 		if curCount >= maxCount then
 			TextColor = completeColor;
 		end
-		ResultText = ResultText .. string.format("%s{#%s}%s/%s{/}", Toukibi:GetResText(ResText, Me.Settings.Lang, "ForTitle.ObtainedCount"), TextColor, curCount, maxCount)
+		ResultText = ResultText .. string.format("{s14}{b}%s{#%s}%s/%s{/}{/}{/}", Toukibi:GetResText(ResText, Me.Settings.Lang, "ForTitle.ObtainedCount"), TextColor, curCount, maxCount)
 	end
 	if invItem.GroupName == "Cube" then
 		local rerollPrice = TryGet(invItem, "NumberArg1")
@@ -2713,9 +2864,9 @@ function Me.GetCollectionText(invItem)
 			local CollectionText = string.format("%s (%s/%s)", CollectionName, CurrentCount, MatchData.Count);
 			local TextStyle = {"#" .. unregisteredColor, "s15"}
 			if isCompleted then
-				TextStyle = {"#" .. completeColor, "ol", "ds", "s15"}
+				TextStyle = {"#" .. completeColor, "b", "ol", "ds", "s15"}
 			elseif hasRegistered then
-				TextStyle = {"#" .. commonColor, "ol", "ds", "s15"}
+				TextStyle = {"#" .. commonColor, "b", "ol", "ds", "s15"}
 			end
 			CollectionText = Toukibi:GetStyledText(CollectionText, TextStyle);
 			CollectionText = "{img " .. collectionIcon .. " 24 24}" .. CollectionText;
@@ -2741,6 +2892,23 @@ function Me.GetCollectionText(invItem)
 	return ResultText;
 end
 
+local function GetEquipInvCount(itemClsName)
+	if itemClsName == nil or itemClsName == "" or itemClsName == "None" then
+		return 0;
+	end
+	local invItemList = session.GetInvItemList();
+	local retTable = {Value = 0};
+	FOR_EACH_INVENTORY(invItemList, function(invItemList, invItem, retTable, itemClsName)
+			if invItem ~= nil then
+				local objItem = GetIES(invItem:GetObject());
+				if objItem.ClassName == itemClsName then
+					retTable.Value = retTable.Value + 1;
+				end
+			end
+		end, false, retTable, itemClsName);
+	return retTable.Value;
+end
+
 function Me.GetRecipeText(invItem)
 	if not Me.Settings.showRecipeCustomTooltips then
 		return "";
@@ -2756,6 +2924,19 @@ function Me.GetRecipeText(invItem)
 	if MatchList == nil then
 		return "";
 	end
+	local invItemIsRecipe = false;
+	if IS_RECIPE_ITEM(invItem) ~= 0 then
+		invItemIsRecipe = true
+	end
+
+	local HaveCount = 0;
+	if invItem.ItemType == "Equip" then
+		HaveCount = GetEquipInvCount(invItem.ClassName)
+	elseif session.GetInvItemByName(invItem.ClassName) == nil then
+		HaveCount = 0;
+	else
+		HaveCount = session.GetInvItemByName(invItem.ClassName).count;
+	end
 
 	local ResultList = {};
 	for i, MatchData in ipairs(MatchList) do
@@ -2764,11 +2945,22 @@ function Me.GetRecipeText(invItem)
 		if TargetRecipe ~= nil then
 			local ResultItem = GetClass("Item", TargetRecipe.TargetItem);
 
-			local NeedCount, HaveCount = 1, 0;
-			if IS_RECIPE_ITEM(invItem) ~= 0 then
-				NeedCount, HaveCount = 1, 1;
+			local NeedCount = 1;
+			if invItemIsRecipe then
+				NeedCount = 1;
 			else
-				NeedCount, HaveCount = GET_RECIPE_MATERIAL_INFO(TargetRecipe, MatchData.Pos);
+				-- 一番大本の取得方法
+				-- NeedCount = GET_RECIPE_MATERIAL_INFO(TargetRecipe, MatchData.Pos);
+
+				-- GET_RECIPE_MATERIAL_INFO 内での取得方法
+				local clsName = "Item_"..MatchData.Pos.."_1";
+				local itemName = TargetRecipe[clsName];
+				if itemName ~= "None" then
+					-- 必要数の取得
+					NeedCount = GET_RECIPE_REQITEM_CNT(TargetRecipe, clsName);
+				else
+					NeedCount = 1;
+				end
 			end
 			
 			--log(MatchData.ClassType)
@@ -2786,6 +2978,12 @@ function Me.GetRecipeText(invItem)
 				isCrafted = true;
 			end
 
+			-- イベントアイテムであるか
+			local isEventItem = false;
+			if string.find(string.lower(TargetRecipe.ClassName), "event") then
+				isEventItem = true;
+			end
+
 			local strTemp = "";
 			if isCrafted then
 				strTemp = "(C) "
@@ -2794,7 +2992,7 @@ function Me.GetRecipeText(invItem)
 			end
 
 			local RecipeColor = GetItemRarityColor(ResultItem);
-			local TextStyle = {"ol", "s15", "ds"};
+			local TextStyle = {"ol", "s15", "b"};
 			if not HasRecipe then
 				RecipeColor = unregisteredColor;
 				TextStyle = {"s15"};
@@ -2824,6 +3022,7 @@ function Me.GetRecipeText(invItem)
 	-- log(string.format("  --> %s%s%s", strTemp, RecipeItemText, CountText));
 			table.insert(ResultList	, {isCrafted = isCrafted
 									, ItemGrade = grade
+									, EventRecipe = isEventItem
 									, Name = dictionary.ReplaceDicIDInCompStr(ResultItem.Name)
 									, Text = Toukibi:GetStyledText(string.format("%s%s", RecipeItemText, CountText), TextStyle)
 										});
@@ -2838,12 +3037,19 @@ function Me.GetRecipeText(invItem)
 									end
 									return false
 								end
+								if a.EventRecipe ~= b.EventRecipe then
+									if a.EventRecipe then
+										return false
+									end
+									return true
+								end
 								if a.ItemGrade ~= b.ItemGrade then
 									return a.ItemGrade < b.ItemGrade
 								end
 								return a.Name < b.Name
 							end)
 
+	
 	-- 出力するテキストを生成する
 	local ResultText = "{nl}";
 	local prevIsCrafted = nil;
@@ -2872,6 +3078,7 @@ function Me.GetRecipeText(invItem)
 		prevIsCrafted = value.isCrafted;
 	end
 	ResultText = Toukibi:GetStyledText(ResultText, {"#" .. labelColor});
+
 	-- log(ResultText);
 	return ResultText;
 end
@@ -3413,6 +3620,7 @@ function Me.InitSettingValue(BaseFrame)
 	ToukibiUI:SetCheckedByName(BodyGBox, "showRecipe",					 Me.Settings.showRecipeCustomTooltips);
 	ToukibiUI:SetCheckedByName(BodyGBox, "showRecipeHaveNeedCount",		 Me.Settings.showRecipeHaveNeedCount);
 	ToukibiUI:SetCheckedByName(BodyGBox, "showItemDropRatio",			 Me.Settings.showItemDropRatio);
+	ToukibiUI:SetCheckedByName(BodyGBox, "UseAutoImportDropData",		 Me.Settings.UseAutoImportDropData);
 	ToukibiUI:SetCheckedByName(BodyGBox, "showMagnumOpus",				 Me.Settings.showMagnumOpus);
 	ToukibiUI:SetCheckedByName(BodyGBox, "AllwaysDisplayOpusMap_From",	 Me.Settings.AllwaysDisplayOpusMap_From);
 	ToukibiUI:SetCheckedByName(BodyGBox, "AllwaysDisplayOpusMap_Into",	 Me.Settings.AllwaysDisplayOpusMap_Into);
@@ -3442,6 +3650,7 @@ function Me.ExecSetting()
 	Me.Settings.showRecipeCustomTooltips =		 ToukibiUI:GetCheckedByName(BodyGBox, "showRecipe");
 	Me.Settings.showRecipeHaveNeedCount =		 ToukibiUI:GetCheckedByName(BodyGBox, "showRecipeHaveNeedCount");
 	Me.Settings.showItemDropRatio =				 ToukibiUI:GetCheckedByName(BodyGBox, "showItemDropRatio");
+	Me.Settings.UseAutoImportDropData =			 ToukibiUI:GetCheckedByName(BodyGBox, "UseAutoImportDropData");
 	Me.Settings.showMagnumOpus =				 ToukibiUI:GetCheckedByName(BodyGBox, "showMagnumOpus");
 	Me.Settings.AllwaysDisplayOpusMap_From =	 ToukibiUI:GetCheckedByName(BodyGBox, "AllwaysDisplayOpusMap_From");
 	Me.Settings.AllwaysDisplayOpusMap_Into =	 ToukibiUI:GetCheckedByName(BodyGBox, "AllwaysDisplayOpusMap_Into");
@@ -3483,6 +3692,8 @@ function Me.InitSettingText(BaseFrame, LangMode)
 						  Toukibi:GetResText(ResText, LangMode, "SettingFrame.showRecipeHaveNeedCount"), {"@st66b"});
 		ToukibiUI:SetText(GET_CHILD(TargetGBox, "showItemDropRatio", "ui::CCheckBox"), 
 						  Toukibi:GetResText(ResText, LangMode, "SettingFrame.showItemDropRatio"), {"@st66b"});
+		ToukibiUI:SetText(GET_CHILD(TargetGBox, "UseAutoImportDropData", "ui::CCheckBox"), 
+						  Toukibi:GetResText(ResText, LangMode, "SettingFrame.UseAutoImportDropData"), {"@st66b"});
 		ToukibiUI:SetText(GET_CHILD(TargetGBox, "showMagnumOpus", "ui::CCheckBox"), 
 						  Toukibi:GetResText(ResText, LangMode, "SettingFrame.showMagnumOpus"), {"@st66b"});
 		ToukibiUI:SetText(GET_CHILD(TargetGBox, "AllwaysDisplayOpusMap_From", "ui::CCheckBox"), 
@@ -3658,6 +3869,13 @@ function TOOLTIPHELPER_TOUKIBI_ON_INIT(addon, frame)
 		Me.LoadMagnumOpusRecipeFromXML();
 		Me.CreateApplicationsList_Collection();
 		Me.CreateApplicationsList_Recipe();
+		-- IToSかJTosか判別(ドロップ率のクラスにヒットさせることで判別する)
+		if GetClassCount("MonsterDropItemList_Onion") < 0 then
+			-- JToSの場合
+			if Me.Settings.UseAutoImportDropData then
+				Me.ImportDropData(false);
+			end
+		end
 		Me.CreateDropRatioList();
 	end
 	if Me.Settings.DoNothing then return end
@@ -3677,9 +3895,12 @@ function TOOLTIPHELPER_TOUKIBI_ON_INIT(addon, frame)
 end
 
 -- ドロップ情報書き込み
+-- ToolTipR.ExportDropData()
 function Me.ExportDropData()
 	local ExportFilePathName = string.format("../addons/%s/%s", addonNameLower, "dropdata.json");
+	local ExportFilePathName_tsv = string.format("../addons/%s/%s", addonNameLower, "dropdata.dat");
 
+	local hFile = io.open(ExportFilePathName_tsv, "w");
 	local tblTarget = {};
 	local clsList, cnt = GetClassList("Monster");
 	for i = 0 , cnt - 1 do
@@ -3701,12 +3922,15 @@ function Me.ExportDropData()
 													, mCID = MobClassID
 													, Ratio = DropRatio
 													 });
+							
+							hFile:write(string.format("%s\t%s\t%s\n", MobClassID, DropRatio, itemClassName));
 						end
 					end
 				end
 			end
 		end
 	end
+	hFile:close();
 	-- Toukibi:SaveTable(ExportFilePathName, Me.ApplicationsList.DropRatio);
 	 Toukibi:SaveTable(ExportFilePathName, tblTarget);
 	log('[Export Drop Ratio Data] Finish!!')

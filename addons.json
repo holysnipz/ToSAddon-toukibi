@@ -3,11 +3,11 @@
     "name": "Shop Helper",
     "file": "shophelper",
     "extension": "ipf",
-    "fileVersion": "v0.9.0",
+    "fileVersion": "v0.9.2",
     "releaseTag": "ShopHelper",
     "unicode": "⛄",
     "description": "露店の画面を少し使いやすいように手助けします。\n This add-on will help the stall screens a little easier to use.",
-    "updateInfo": "v0.9.0 パッチ後露店で購入ができない問題を修正。販売価格の比較機能を削除。\n Fixed a problem that makes it impossible to purchase at stalls after applying patch.\n Delete guidance function as to whether the selling price is high or low.",
+    "updateInfo": "v0.9.2 修理露店における追加オブジェクトの表示位置を調整しました。\n Adjusted the display position of additional objects in repair stalls.",
     "tags": [
       "ui",
       "Auto-sellor baloon",
@@ -21,11 +21,11 @@
     "name": "Dur Notice Mini",
     "file": "durnoticemini",
     "extension": "ipf",
-    "fileVersion": "v1.2.3",
+    "fileVersion": "v1.2.4",
     "releaseTag": "DurNoticeMini",
     "unicode": "⛄",
     "description": "武器と防具のそれぞれで最も低い耐久値を表示します。zealotさんのDur Noticeを小型化してステータス表示に溶け込めるようにしたものです。\n This add-on is a miniaturized version of durability value viewer 'Dur Notice' made by 'zealot'.",
-    "updateInfo": "v1.2.3 Re:Buildパッチに対応しました \n Corresponded to Re: Build patch.",
+    "updateInfo": "v1.2.4 武器の飾りも耐久値の表示に反映されるようにしました。 \n The durability value of the trinket is now displayed.",
     "tags": [
       "ui",
       "durability",
@@ -39,11 +39,11 @@
     "name": "Map Mate",
     "file": "mapmate",
     "extension": "ipf",
-    "fileVersion": "v0.8.9",
+    "fileVersion": "v0.9.2",
     "releaseTag": "MapMate",
     "unicode": "⛄",
     "description": "マップ表示を色々便利にしてくれます。\n This add-on makes map display a lot convenient.",
-    "updateInfo": "v0.8.9 3/13に行われたIToSのアップデートに対応しました \n Added support for IToS update on March 13.",
+    "updateInfo": "v0.9.2 モンスター一覧とコレクションアイテム一覧にアイテムドロップ率の情報が付加されました。 \n Item drop rate information has been added to the monster list and collection item list.",
     "tags": [
       "ui",
       "map",
@@ -73,11 +73,11 @@
     "name": "Remaining Counter",
     "file": "remainingcounter",
     "extension": "ipf",
-    "fileVersion": "v1.0.5",
+    "fileVersion": "v1.0.7",
     "releaseTag": "RemainingCounter",
     "unicode": "⛄",
     "description": "アイテムを使用するスキルの場合、クイックスロットの右下に残り回数を表示します。\n  For skills that use items, this add-on display the remaining number in the lower right of Quick Slot.",
-    "updateInfo": "v1.0.4 Re:Buildパッチ適用後、スキルアイコンが表示されない不具合を修正しました \n Fixed a problem that skill icon was not displayed after applying Re: Build patch.",
+    "updateInfo": "v1.0.7 セット装備スキルをスロットに登録した状態でセット装備のセット条件が満たされなくなるとスロットアイコンの表示が止まる問題を修正しました。 \n Fixed an issue where the slot icon would stop drawing if the set conditions for the set equipment were not met while the set equipment skill was registered in the slot.",
     "tags": [
       "ui",
       "remaining number",
@@ -89,10 +89,11 @@
     "name": "Tooltip Helper (Rebuild by Toukibi)",
     "file": "tooltiphelper_toukibi",
     "extension": "ipf",
-    "fileVersion": "v1.0.4",
+    "fileVersion": "v1.0.8",
     "releaseTag": "TooltipHelper_Rebuild",
     "unicode": "⛄",
     "description": "Tooltip Helperの焼き直し版です。\n  This is a reworked version of Tooltip Helper.",
+    "updateInfo": "v1.0.8 アイテムドロップ率のファイル形式をXMLからTSVに変更し、読み込み速度を向上させました。\n Changed the file format of item drop rate from XML to TSV to improve the loading speed.",
     "tags": [
       "ui",
       "tooltip",
@@ -139,11 +140,11 @@
     "name": "Better Pick Queue",
     "file": "betterpickqueue",
     "extension": "ipf",
-    "fileVersion": "v1.1.4",
+    "fileVersion": "v1.1.5",
     "releaseTag": "BetterPickQueue",
     "unicode": "⛄",
     "description": "画面の右下で拾ったアイテムを表示する機能を強化します。\n  This add-on enhances the ability to display the items picked up.",
-    "updateInfo": "v1.1.4 Re:Buildパッチ適用後、装備アイテムを拾うと動作が停止する不具合を修正 \n Fixed an issue where counting operation stopped when equipment items were picked up after applying Re: Build patch.",
+    "updateInfo": "v1.1.5 画面の伸びる方向の設定に左右方向を追加しました。\n A horizontal direction has been added to the setting of the direction in which the window extends.",
     "tags": [
       "ui",
       "item message",
@@ -192,6 +193,21 @@
     "tags": [
       "ui",
       "items"
+    ]
+  },
+  {
+    "name": "Popup Quest Warp",
+    "file": "popupquestwarp",
+    "extension": "ipf",
+    "fileVersion": "v1.0.0",
+    "releaseTag": "PopupQuestWarp",
+    "unicode": "⛄",
+    "description": "街への帰還石/スクロールと各クエストへのワープを補助します。 \n  This add-on will assist you in using warp-stones/scrolls to the city and warping each quest.",
+    "updateInfo": "v1.0.0 新規公開 \n New release.",
+    "tags": [
+      "ui",
+      "quest warp",
+      "warp stone"
     ]
   }
 ]
